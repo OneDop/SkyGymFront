@@ -1,0 +1,114 @@
+<div class="page">
+  @if (from() === 'list') {
+    <button type="button" class="back-link" (click)="leave()"><mat-icon>arrow_back</mat-icon> Back to Members</button>
+  } @else {
+    <a class="back-link" [routerLink]="['/members', id()]"><mat-icon>arrow_back</mat-icon> Back to Member Profile</a>
+  }
+  <h1 class="page-title">Freeze Membership</h1>
+  <p class="page-subtitle">Temporarily suspend a membership contract.</p>
+  <hr class="rule" />
+
+  @switch (state()) {
+    @case ('loading') { <p class="muted">Loading membership…</p> }
+    @case ('notFound') {
+      <app-state-message icon="person_off" title="Member not found" message="This member doesn't exist or was removed." />
+    }
+    @case ('error') {
+      <app-state-message icon="cloud_off" title="The membership could not be loaded" actionLabel="Retry" (act)="load()" />
+    }
+    @case ('ready') {
+      <div class="layout">
+        <div class="left">
+          <section class="card summary">
+            <app-avatar [name]="member()!.fullName" [size]="84" />
+            <div>
+              <h2>{{ member()!.fullName }}</h2>
+              <p class="meta">ID: {{ member()!.membershipNumber }}@if (membership(); as ms) { • {{ ms.planName }} }</p>
+              @if (membership(); as ms) {
+                <div class="meta-row">
+                  <app-status-badge [status]="ms.status" [label]="ms.status.toUpperCase()" />
+                  <span>Current End Date: {{ ms.endDate | date: 'MMM d, y' }}</span>
+                </div>
+              }
+            </div>
+          </section>
+
+          @if (blockedReason(); as reason) {
+            <div class="notice" role="status"><mat-icon>info</mat-icon>{{ reason }} This screen is read-only.</div>
+          }
+
+          <section class="card params">
+            <h2 class="section-title">Freeze Parameters</h2>
+            <form [formGroup]="form" id="freeze-form" (ngSubmit)="confirm()">
+              <div class="field start">
+                <label class="field-label" for="fz-start">Start Date<span class="req">*</span></label>
+                <mat-form-field>
+                  <mat-icon matPrefix>calendar_month</mat-icon>
+                  <input matInput id="fz-start" [matDatepicker]="picker" formControlName="startDate"
+                         [min]="today" placeholder="mm/dd/yyyy" [appAutofocus]="!blockedReason()" />
+                  <mat-datepicker-toggle matIconSuffix [for]="picker" />
+                  <mat-datepicker #picker />
+                </mat-form-field>
+                @if (startError(); as e) { <span class="field-error">{{ e }}</span> }
+              </div>
+
+              <div class="field">
+                <span class="field-label" id="fz-dur">Duration (Months)<span class="req">*</span></span>
+                <div class="toggles" role="radiogroup" aria-labelledby="fz-dur">
+                  @for (n of durations; track n) {
+                    <span [matTooltip]="durationTooltip(n)">
+                      <button type="button" class="toggle" role="radio" [attr.aria-checked]="months() === n"
+                              [class.selected]="months() === n"
+                              [disabled]="form.disabled || durationTooLong(n)" (click)="pickDuration(n)">
+                        {{ n }} {{ n === 1 ? 'Month' : 'Months' }}
+                      </button>
+                    </span>
+                  }
+                </div>
+                @if (durationError(); as e) { <span class="field-error">{{ e }}</span> }
+              </div>
+
+              <div class="field reason">
+                <label class="field-label" for="fz-reason">Reason for Freeze<span class="req">*</span></label>
+                <mat-form-field>
+                  <mat-select id="fz-reason" formControlName="reason" placeholder="Select a reason">
+                    @for (r of reasons; track r.value) { <mat-option [value]="r.value">{{ r.label }}</mat-option> }
+                  </mat-select>
+                </mat-form-field>
+                @if (reasonError(); as e) { <span class="field-error">{{ e }}</span> }
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="fz-notes">Additional Notes (Optional)</label>
+                <mat-form-field>
+                  <textarea matInput id="fz-notes" formControlName="notes" rows="4" maxlength="500"
+                            placeholder="Enter any relevant details..."></textarea>
+                  <mat-hint align="end">{{ form.controls.notes.value.length }} / 500</mat-hint>
+                </mat-form-field>
+              </div>
+            </form>
+          </section>
+        </div>
+        <aside class="card impact">
+          <header><mat-icon>monitoring</mat-icon><h2>Projected Impact</h2></header>
+          <dl>
+            <div><dt>Original End Date</dt><dd>{{ originalEnd() ? (originalEnd() | date: 'MMM d, y') : '--' }}</dd></div>
+            <div><dt>Freeze Duration</dt><dd>{{ months() }} {{ months() === 1 ? 'Month' : 'Months' }}</dd></div>
+          </dl>
+          <div class="new-end">
+            <span>New End Date</span>
+            <strong>{{ newEndDate() ? (newEndDate() | date: 'MMM d, y') : '--' }}</strong>
+          </div>
+          <p class="billing">* Billing will automatically pause during the freeze period and resume upon reactivation.</p>
+          <div class="buttons">
+            <button type="submit" form="freeze-form" class="btn btn-primary btn-block"
+                    [disabled]="form.invalid || form.disabled || saving()">
+              <mat-icon>ac_unit</mat-icon> {{ saving() ? 'Freezing…' : 'Confirm Freeze' }}
+            </button>
+            <button type="button" class="btn btn-outline btn-block" (click)="leave()">Cancel</button>
+          </div>
+        </aside>
+      </div>
+    }
+  }
+</div>

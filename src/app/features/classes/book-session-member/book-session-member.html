@@ -1,0 +1,89 @@
+<header class="bar">
+  <button type="button" class="icon-btn" (click)="back()" aria-label="Back"><mat-icon>arrow_back</mat-icon></button>
+  <h1>Class Booking</h1>
+  @if (member(); as m) {
+    <span class="who" [class.ok]="m.status === 'Active'">
+      <span class="dot"></span>{{ m.status === 'Active' ? 'Active Member' : m.fullName }}
+    </span>
+  }
+</header>
+
+<main class="content">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a routerLink="/classes">Classes</a><mat-icon>chevron_right</mat-icon><span>Booking</span>
+  </nav>
+
+  @switch (state()) {
+    @case ('loading') { <p class="muted">Loading class…</p> }
+    @case ('notFound') { <app-state-message icon="event_busy" title="Class not found" message="This class doesn't exist or was removed." /> }
+    @case ('error') { <app-state-message icon="cloud_off" title="The class could not be loaded" actionLabel="Retry" (act)="load()" /> }
+    @case ('ready') {
+      @let s = session()!;
+      <section class="card panel">
+        <h2>{{ s.className }}</h2>
+        <p class="when"><mat-icon>schedule</mat-icon>{{ when() }}</p>
+
+        <div class="people">
+          <div><mat-icon>person</mat-icon><span><small>Trainer</small>{{ s.trainerName ?? 'To be confirmed' }}</span></div>
+          <div><mat-icon>meeting_room</mat-icon><span><small>Studio</small>{{ s.studioName ?? 'To be confirmed' }}</span></div>
+        </div>
+
+        @if (booked(); as result) {
+          <div class="done" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <div>
+              <strong>{{ result === 'booked' ? "You're booked!" : "You're on the waitlist" }}</strong>
+              <p>{{ result === 'booked' ? 'See you in class.' : "We'll move you into the class if a place opens up." }}</p>
+            </div>
+          </div>
+          <div class="actions"><button type="button" class="btn btn-primary" (click)="back()">Done</button></div>
+        } @else {
+          <div class="boxes">
+            <div class="box">
+              <small>Availability</small>
+              @if (s.placesRemaining > 0) {
+                <p><strong>{{ s.placesRemaining }}</strong> spots left ({{ s.confirmedCount }}/{{ s.capacityLimit }} booked)</p>
+              } @else {
+                <p><strong>Full</strong> · waitlist {{ s.waitlistCount }}</p>
+              }
+              <div class="meter"><span [style.width.%]="fillPercent()"></span></div>
+            </div>
+            <div class="box">
+              <small>Eligibility Status</small>
+              @if (!member()) {
+                <p class="muted-text">Find your membership below.</p>
+              } @else if (blocked(); as reason) {
+                <div class="elig bad"><mat-icon>block</mat-icon><span><strong>Not eligible</strong>{{ reason }}</span></div>
+              } @else {
+                <div class="elig good"><mat-icon>check_circle</mat-icon><span><strong>Active Membership</strong>Cleared for booking</span></div>
+              }
+            </div>
+          </div>
+
+          @if (!memberId()) {
+            <div class="field">
+              <span class="field-label">Your membership</span>
+              <app-member-search [member]="member()" (memberChange)="chooseMember($event)" />
+            </div>
+          }
+
+          <div class="field">
+            <label class="field-label" for="mv-notes">Notes for the Trainer (Optional)</label>
+            <span class="field-hint">Include any injuries, required modifications, or equipment needs.</span>
+            <mat-form-field>
+              <textarea matInput id="mv-notes" [formControl]="notes" rows="3" maxlength="500"
+                        placeholder="e.g., Recovering from mild shoulder strain, need alternative exercises."></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn btn-outline" (click)="back()">Cancel</button>
+            <button type="button" class="btn btn-primary" (click)="confirm()" [disabled]="!member() || !!blocked() || saving()">
+              {{ saving() ? 'Booking…' : s.placesRemaining > 0 ? 'Confirm Booking' : 'Join Waitlist' }} <mat-icon>check</mat-icon>
+            </button>
+          </div>
+        }
+      </section>
+    }
+  }
+</main>

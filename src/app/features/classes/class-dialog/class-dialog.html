@@ -1,0 +1,147 @@
+<div class="head">
+  <h2 mat-dialog-title>{{ title() }}</h2>
+  <button type="button" class="icon-btn" (click)="cancel()" aria-label="Close"><mat-icon>close</mat-icon></button>
+</div>
+
+<mat-dialog-content>
+  <form [formGroup]="form" id="class-form" (ngSubmit)="save()">
+    <div class="row">
+      <div class="field">
+        <label class="field-label" for="c-name">Class Name<span class="req">*</span></label>
+        <mat-form-field>
+          <input matInput id="c-name" formControlName="className" maxlength="80"
+                 placeholder="e.g., High-Intensity Interval Training" [appAutofocus]="mode() !== 'view'" />
+        </mat-form-field>
+        @if (error('className', 'Class name'); as e) { <span class="field-error">{{ e }}</span> }
+      </div>
+      <div class="field">
+        <label class="field-label" for="c-branch">Branch<span class="req">*</span></label>
+        <mat-form-field>
+          <mat-select id="c-branch" formControlName="branchId" placeholder="Select a branch">
+            @for (b of branches.branches(); track b.id) { <mat-option [value]="b.id">{{ b.name }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        @if (mode() === 'edit' && hasBookings) {
+          <span class="field-hint">The branch can't change while the class has bookings.</span>
+        }
+        @if (error('branchId', 'Branch'); as e) { <span class="field-error">{{ e }}</span> }
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label class="field-label" for="c-trainer">Trainer / Instructor</label>
+        <mat-form-field>
+          <mat-select id="c-trainer" formControlName="trainerId" placeholder="Select an instructor">
+            <mat-option [value]="null">No trainer yet</mat-option>
+            @for (t of trainers(); track t.id) {
+              <mat-option [value]="t.id">{{ t.fullName }}@if (t.specialty) { <span class="opt-meta"> · {{ t.specialty }}</span> }</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (mode() !== 'view' && trainers().length === 0) {
+          <span class="field-hint">No active trainers at this branch.</span>
+        }
+        @if (error('trainerId', 'Trainer'); as e) { <span class="field-error">{{ e }}</span> }
+      </div>
+      <div class="field">
+        <label class="field-label" for="c-studio">Studio / Room</label>
+        <mat-form-field>
+          <mat-select id="c-studio" formControlName="studioId" placeholder="Assign a room">
+            <mat-option [value]="null">No room yet</mat-option>
+            @for (s of studios(); track s.id) {
+              <mat-option [value]="s.id">{{ s.name }} <span class="opt-meta">· holds {{ s.capacity }}</span></mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        @if (error('studioId', 'Studio'); as e) { <span class="field-error">{{ e }}</span> }
+      </div>
+    </div>
+    <div class="row three">
+      <div class="field">
+        <label class="field-label" for="c-date">Date<span class="req">*</span></label>
+        <mat-form-field>
+          <input matInput id="c-date" [matDatepicker]="picker" formControlName="date"
+                 [min]="mode() === 'view' ? null : today" placeholder="mm/dd/yyyy" />
+          <mat-datepicker-toggle matIconSuffix [for]="picker" />
+          <mat-datepicker #picker />
+        </mat-form-field>
+        @if (error('date', 'Date'); as e) { <span class="field-error">{{ e }}</span> }
+      </div>
+      <div class="field">
+        <label class="field-label" for="c-time">Start Time<span class="req">*</span></label>
+        <mat-form-field>
+          <input matInput id="c-time" type="time" formControlName="startTime" />
+          <mat-icon matSuffix>schedule</mat-icon>
+        </mat-form-field>
+        @if (error('startTime', 'Start time') ?? groupError('startPast'); as e) { <span class="field-error">{{ e }}</span> }
+      </div>
+      <div class="field">
+        <label class="field-label" for="c-cap">Capacity Limit</label>
+        <mat-form-field>
+          <input matInput id="c-cap" type="number" min="1" max="100" step="1" formControlName="capacity" placeholder="20" />
+          <span matTextSuffix class="suffix">spots</span>
+        </mat-form-field>
+        @if (session; as s) {
+          @if (mode() !== 'add') {
+            <span class="field-hint">{{ s.confirmedCount }} / {{ s.capacityLimit }} enrolled@if (s.waitlistCount) { · Waitlist: {{ s.waitlistCount }} }</span>
+          }
+        } @else {
+          <span class="field-hint">Left empty = 20 spots@if (selectedStudio(); as st) { · room holds {{ st.capacity }} }</span>
+        }
+        @if (error('capacity', 'Capacity') ?? groupError('overRoom') ?? groupError('belowBooked'); as e) {
+          <span class="field-error">{{ e }}</span>
+        }
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <span class="field-label" id="c-dur">Duration</span>
+        <div class="cards" role="radiogroup" aria-labelledby="c-dur">
+          @for (d of durationOptions; track d) {
+            <label class="radio-card" [class.selected]="form.controls.duration.value === d"
+                   [class.disabled]="form.controls.duration.disabled">
+              <input type="radio" [value]="d" formControlName="duration" />
+              <span>{{ d }} min</span>
+            </label>
+          }
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">Status</span>
+        <div><app-status-badge [status]="statusBadge.status" [label]="statusBadge.label" /></div>
+        @if (!session) { <span class="field-hint">Every new class opens for booking straight away.</span> }
+      </div>
+    </div>
+    <div class="field full">
+      <label class="field-label" for="c-desc">Description <span class="optional">(Optional)</span></label>
+      <mat-form-field>
+        <textarea matInput id="c-desc" formControlName="description" rows="3" maxlength="500"
+                  placeholder="Add details about the class focus, required equipment, or intensity level..."></textarea>
+        @if (mode() !== 'view') { <mat-hint align="end">{{ form.controls.description.value.length }} / 500</mat-hint> }
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  @switch (mode()) {
+    @case ('view') {
+      <button type="button" class="btn btn-outline" (click)="cancel()">Close</button>
+      @if (canEdit) {
+        <button type="button" class="btn btn-primary" (click)="edit()"><mat-icon>edit</mat-icon> Edit</button>
+      }
+    }
+    @case ('edit') {
+      <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+      <button type="submit" form="class-form" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save Changes' }}
+      </button>
+    }
+    @default {
+      <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+      <button type="submit" form="class-form" class="btn btn-primary" [disabled]="saving()">
+        <mat-icon>calendar_add_on</mat-icon> {{ saving() ? 'Scheduling…' : 'Schedule Class' }}
+      </button>
+    }
+  }
+</mat-dialog-actions>

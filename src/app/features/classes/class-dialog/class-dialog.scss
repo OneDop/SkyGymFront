@@ -1,0 +1,21 @@
+.head { display: flex; align-items: center; justify-content: space-between; padding-right: 16px;
+  border-bottom: 1px solid var(--tf-border); }
+.head h2 { margin: 0; }
+form { display: flex; flex-direction: column; padding-top: 8px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 16px 0; border-bottom: 1px solid var(--tf-border); }
+.row.three { grid-template-columns: 1fr 1fr 1fr; }
+.full { padding-top: 16px; }
+.optional { font-weight: 400; color: var(--tf-muted); }
+.suffix { color: var(--tf-muted); padding-left: 6px; }
+.opt-meta { color: var(--tf-muted); font-size: 14px; }
+
+.cards { display: flex; gap: 12px; }
+.radio-card { flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer;
+  border: 1px solid var(--tf-border-strong); background: var(--tf-surface); }
+.radio-card input { accent-color: var(--tf-navy); width: 18px; height: 18px; margin: 0; }
+.radio-card.selected { border: 2px solid var(--tf-navy); background: var(--tf-navy-tint); }
+.radio-card.disabled { cursor: default; background: var(--tf-grey-bg); }
+
+@media (max-width: 760px) {
+  .row, .row.three { grid-template-columns: 1fr; gap: 8px; }
+}

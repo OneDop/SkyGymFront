@@ -1,0 +1,128 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Class Schedule</h1>
+      <p class="page-subtitle">
+        @if (view() === 'week') {
+          Sessions for {{ date() | date: 'MMM d' }} – {{ weekEnd() | date: 'MMM d, y' }}
+        } @else if (isToday()) {
+          Manage and monitor today's sessions.
+        } @else {
+          Sessions for {{ date() | date: 'MMM d, y' }}
+        }
+      </p>
+    </div>
+
+    <div class="toolbar">
+      <mat-form-field class="branch">
+        <mat-select [ngModel]="branchFilter()" (ngModelChange)="branchFilter.set($event)" aria-label="Branch">
+          <mat-option value="all">All Branches</mat-option>
+          @for (b of branches.branches(); track b.id) { <mat-option [value]="b.id">{{ b.name }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="date-nav">
+        <button type="button" class="icon-btn" (click)="shiftDate(view() === 'week' ? -7 : -1)"
+                [attr.aria-label]="view() === 'week' ? 'Previous week' : 'Previous day'"><mat-icon>chevron_left</mat-icon></button>
+        <mat-form-field class="date">
+          <input matInput [matDatepicker]="picker" [ngModel]="date()" (ngModelChange)="pickDate($event)" aria-label="Date" />
+          <mat-datepicker-toggle matIconSuffix [for]="picker" />
+          <mat-datepicker #picker />
+        </mat-form-field>
+        <button type="button" class="icon-btn" (click)="shiftDate(view() === 'week' ? 7 : 1)"
+                [attr.aria-label]="view() === 'week' ? 'Next week' : 'Next day'"><mat-icon>chevron_right</mat-icon></button>
+      </div>
+
+      <div class="view-toggle" role="group" aria-label="View">
+        <button type="button" [class.on]="view() === 'day'" [attr.aria-pressed]="view() === 'day'" (click)="view.set('day')">Day</button>
+        <button type="button" [class.on]="view() === 'week'" [attr.aria-pressed]="view() === 'week'" (click)="view.set('week')">Week</button>
+      </div>
+
+      <button type="button" class="btn btn-primary" (click)="addClass()"><mat-icon>add</mat-icon> Add Class</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="card list">
+      <header class="list-head">
+        <h2>
+          @if (view() === 'week') { Week's Sessions }
+          @else if (isToday()) { Today's Sessions }
+          @else { Sessions · {{ date() | date: 'EEE, MMM d' }} }
+        </h2>
+        <span class="count">{{ visible().length }} {{ visible().length === 1 ? 'Class' : 'Classes' }}</span>
+      </header>
+
+      @if (failed()) {
+        <app-state-message icon="cloud_off" title="The schedule could not be loaded" actionLabel="Retry" (act)="load()" />
+      } @else if (loading() && sessions().length === 0) {
+        <p class="muted">Loading sessions…</p>
+      } @else {
+        @for (g of groups(); track g.date.getTime()) {
+          @if (view() === 'week') {
+            <h3 class="day-head">{{ g.date | date: 'EEEE, MMM d' }} <span>{{ g.sessions.length }}</span></h3>
+          }
+          @for (s of g.sessions; track s.id) {
+            <article class="row" [class.live]="state(s) === 'InProgress'" [class.cancelled]="s.status === 'Cancelled'">
+              <div class="time" [matTooltip]="view() === 'day' ? durationText(s) : ''">
+                <strong>{{ time(s).time }}</strong><span>{{ time(s).meridiem }}</span>
+              </div>
+
+              <div class="info">
+                <h4>
+                  <button type="button" class="name" (click)="openClass('view', s)"
+                          [innerHTML]="s.className | highlight: search.term()"></button>
+                  @if (nearlyFull(s)) { <span class="dot" matTooltip="At least 90% full" aria-label="Nearly full"></span> }
+                </h4>
+                <p class="meta">
+                  <span><mat-icon>person</mat-icon><span [innerHTML]="(s.trainerName ?? 'No trainer') | highlight: search.term()"></span></span>
+                  <span><mat-icon>location_on</mat-icon><span [innerHTML]="(s.studioName ?? 'No room') | highlight: search.term()"></span></span>
+                  @if (allBranches()) { <span><mat-icon>store</mat-icon><span [innerHTML]="s.branchName | highlight: search.term()"></span></span> }
+                  @if (view() === 'week') { <span><mat-icon>schedule</mat-icon>{{ durationText(s) }}</span> }
+                </p>
+              </div>
+
+              <div class="state">
+                @if (state(s) !== 'Upcoming') { <app-status-badge [status]="state(s)" [dot]="false" [highlight]="search.term()" /> }
+              </div>
+
+              <div class="enrol">
+                <strong>{{ s.confirmedCount }} / {{ s.capacityLimit }}</strong>
+                <div class="bar"><span [class]="fillTone(s)" [style.width.%]="fill(s)"></span></div>
+                @if (s.waitlistCount > 0) { <small>Waitlist: {{ s.waitlistCount }}</small> }
+              </div>
+
+              <app-row-menu [actions]="actionsFor(s)" [label]="s.className"
+                            (view)="openClass('view', s)" (edit)="openClass('edit', s)" (action)="onAction($event, s)" />
+            </article>
+          } @empty {
+            @if (view() === 'day') {
+              <app-state-message icon="event_busy" [compact]="true"
+                                 [title]="search.term() ? 'No classes match your search' : 'No classes scheduled'"
+                                 [message]="search.term() ? 'Try another class, trainer or studio.' : 'Use Add Class to schedule one.'" />
+            } @else {
+              <p class="none">No classes</p>
+            }
+          }
+        }
+      }
+    </section>
+
+    <aside class="card overview">
+      <h2>Capacity Overview</h2>
+      <div class="stats">
+        <div class="stat">
+          <mat-icon>groups</mat-icon>
+          <strong>{{ capacity().booked }}</strong>
+          <span>Total Bookings</span>
+        </div>
+        <div class="stat">
+          <mat-icon>event_available</mat-icon>
+          <strong>{{ capacity().fill }}%</strong>
+          <span>Avg Fill Rate</span>
+        </div>
+      </div>
+      @if (capacity().waitlist) { <p class="wait">{{ capacity().waitlist }} on waitlists</p> }
+    </aside>
+  </div>
+</div>

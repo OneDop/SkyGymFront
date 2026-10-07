@@ -1,0 +1,93 @@
+<div class="page">
+  <button type="button" class="back-link" (click)="backToList()"><mat-icon>arrow_back</mat-icon> Back to list</button>
+
+  @switch (state()) {
+    @case ('loading') { <p class="muted">Loading trainer…</p> }
+    @case ('notFound') {
+      <app-state-message icon="person_off" title="Trainer not found"
+                         message="This trainer doesn't exist or was removed." actionLabel="Back to list" (act)="backToList()" />
+    }
+    @case ('error') { <app-state-message icon="cloud_off" title="The trainer could not be loaded" actionLabel="Retry" (act)="retry()" /> }
+    @case ('ready') {
+      <div class="page-head">
+        <div>
+          <div class="title-row">
+            <h1 class="page-title">{{ title() }}</h1>
+            <span class="mode-badge">{{ badge() }}</span>
+          </div>
+          <p class="page-subtitle">
+            @if (mode() === 'add') { Add a trainer to the roster. } @else { Trainer #{{ trainer()?.trainerNumber }} }
+          </p>
+        </div>
+        @if (mode() === 'view') {
+          <button type="button" class="btn btn-primary" (click)="startEdit()"><mat-icon>edit</mat-icon> Edit Trainer</button>
+        }
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <section class="card">
+          <header class="card-head"><h2 class="card-title">Trainer Details</h2></header>
+          <div class="card-body form-grid">
+            <div class="field">
+              <label class="field-label" for="t-name">Trainer name@if (mode() !== 'view') {<span class="req">*</span>}</label>
+              <mat-form-field>
+                <input matInput id="t-name" formControlName="fullName" maxlength="80" placeholder="e.g., Sarah Jenkins"
+                       [appAutofocus]="mode() !== 'view'" />
+              </mat-form-field>
+              @if (error('fullName', 'Trainer name'); as e) { <span class="field-error">{{ e }}</span> }
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="t-spec">Specialty</label>
+              <mat-form-field>
+                <input matInput id="t-spec" formControlName="specialty" maxlength="100" placeholder="e.g., HIIT / Strength" />
+              </mat-form-field>
+              @if (error('specialty', 'Specialty'); as e) { <span class="field-error">{{ e }}</span> }
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="t-branch">Branch@if (mode() !== 'view') {<span class="req">*</span>}</label>
+              <mat-form-field>
+                <mat-select id="t-branch" formControlName="homeBranchId" placeholder="Select a branch">
+                  @for (b of branches.branches(); track b.id) { <mat-option [value]="b.id">{{ b.name }}</mat-option> }
+                </mat-select>
+              </mat-form-field>
+              @if (error('homeBranchId', 'Branch'); as e) { <span class="field-error">{{ e }}</span> }
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="t-email">Email@if (mode() !== 'view') {<span class="req">*</span>}</label>
+              <mat-form-field>
+                <input matInput id="t-email" type="email" formControlName="email" maxlength="100" placeholder="name@titanfitness.com" />
+              </mat-form-field>
+              @if (error('email', 'Email'); as e) { <span class="field-error">{{ e }}</span> }
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="t-phone">Phone</label>
+              <mat-form-field>
+                <input matInput id="t-phone" type="tel" formControlName="phone" maxlength="20" placeholder="+1 (555) 000-0000" />
+              </mat-form-field>
+              @if (error('phone', 'Phone'); as e) { <span class="field-error">{{ e }}</span> }
+            </div>
+
+            <div class="field">
+              <span class="field-label">Status</span>
+              <mat-checkbox formControlName="isActive">IsActive</mat-checkbox>
+              @if (mode() !== 'view') { <span class="field-hint">Ticked means true, unticked means false.</span> }
+            </div>
+          </div>
+        </section>
+
+        @if (mode() !== 'view') {
+          <div class="footer">
+            <button type="button" class="btn btn-outline" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">
+              <mat-icon>check</mat-icon> {{ saving() ? 'Saving…' : mode() === 'add' ? 'Save Trainer' : 'Save Changes' }}
+            </button>
+          </div>
+        }
+      </form>
+    }
+  }
+</div>

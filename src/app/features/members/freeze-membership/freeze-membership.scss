@@ -1,0 +1,44 @@
+.rule { border: 0; border-top: 1px solid var(--tf-border); margin: 28px 0 40px; }
+.muted { color: var(--tf-muted); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 470px; gap: 32px; align-items: start; }
+.left { display: flex; flex-direction: column; gap: 22px; }
+
+.summary { display: flex; gap: 22px; padding: 32px; align-items: flex-start; }
+.summary app-avatar ::ng-deep .avatar { border-radius: 8px; }
+.summary h2 { margin: 0 0 6px; font-size: 26px; }
+.meta { margin: 0 0 14px; color: var(--tf-text-soft); font-size: 17px; }
+.meta-row { display: flex; align-items: center; gap: 20px; color: var(--tf-text-soft); flex-wrap: wrap; }
+
+.notice { display: flex; gap: 10px; align-items: center; padding: 14px 18px; background: var(--tf-amber-bg);
+  border: 1px solid var(--tf-amber-border); color: var(--tf-amber); }
+
+.params { padding: 32px; }
+.section-title { margin: 0 0 22px; padding-bottom: 14px; border-bottom: 1px solid var(--tf-border); font-size: 30px; }
+form { display: flex; flex-direction: column; gap: 18px; }
+.start { max-width: 506px; }
+.reason { max-width: 590px; }
+
+.toggles { display: flex; gap: 22px; flex-wrap: wrap; }
+.toggle { min-width: 138px; height: 56px; padding: 0 24px; border: 1px solid var(--tf-border-strong); background: var(--tf-surface);
+  font-family: var(--tf-font); font-size: 20px; cursor: pointer; color: var(--tf-text); }
+.toggle.selected { border: 2px solid var(--tf-navy); background: var(--tf-navy-tint); }
+.toggle:disabled { cursor: not-allowed; color: var(--tf-disabled); background: var(--tf-grey-bg); }
+
+.impact { padding: 0; }
+.impact header { display: flex; align-items: center; gap: 14px; padding: 32px; background: var(--tf-page);
+  border-bottom: 1px solid var(--tf-border); }
+.impact header mat-icon { color: var(--tf-navy); }
+.impact h2 { margin: 0; font-size: 30px; }
+dl { margin: 0; padding: 18px 32px 0; }
+dl div { display: flex; justify-content: space-between; padding: 22px 0; border-bottom: 1px solid var(--tf-border); }
+dt { color: var(--tf-text-soft); font-size: 17px; }
+dd { margin: 0; font-size: 19px; }
+.new-end { margin: 22px 32px 0; padding: 24px 16px; display: flex; justify-content: space-between; align-items: center;
+  background: var(--tf-navy-tint); border: 1px solid var(--tf-border-strong); }
+.new-end span { color: var(--tf-navy); font-weight: 700; letter-spacing: .04em; }
+.new-end strong { color: var(--tf-navy); font-size: 28px; }
+.billing { margin: 22px 32px; color: var(--tf-muted); font-size: 15px; }
+.buttons { display: flex; flex-direction: column; gap: 16px; padding: 32px; border-top: 1px solid var(--tf-border); }
+
+@media (max-width: 1200px) { .layout { grid-template-columns: 1fr; } }
